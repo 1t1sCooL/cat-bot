@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cat-bot
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cat-bot
+  template:
+    metadata:
+      labels:
+        app: cat-bot
+    spec:
+      containers:
+        - name: bot
+          image: 1t1scool/cat-bot:latest
+          env:
+            - name: CAT_BOT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: tg-cat-bot-token
+                  key: CAT_BOT_TOKEN
