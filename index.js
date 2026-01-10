@@ -1,7 +1,14 @@
 const { Telegraf, Markup } = require("telegraf");
 const cron = require("node-cron");
 
-const bot = new Telegraf("8582077123:AAH4VsMAePaz3B1GkN7vknxECq_8Tup_TVQ");
+const token = process.env.CAT_BOT_TOKEN;
+
+if (!token) {
+  console.error("ERROR: BOT_TOKEN is not defined!");
+  process.exit(1);
+}
+
+const bot = new Telegraf(token);
 
 const userSettings = {};
 const getCatUrl = () => `https://cataas.com/cat?t=${new Date().getTime()}`;
