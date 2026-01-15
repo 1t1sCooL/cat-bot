@@ -2,61 +2,83 @@ const { Telegraf, Markup } = require("telegraf");
 const cron = require("node-cron");
 
 const token = process.env.CAT_BOT_TOKEN;
-
-if (!token) {
-  console.error("ERROR: BOT_TOKEN is not defined!");
-  process.exit(1);
-}
-
 const bot = new Telegraf(token);
 
 const userSettings = {};
 const getCatUrl = () => `https://cataas.com/cat?t=${new Date().getTime()}`;
 
-const mainMenu = Markup.keyboard([
-  ["Подписаться 🔔", "Отписаться 🔕"],
-  ["Прислать котика сейчас 🐾"],
-]).resize();
+const getKeyboard = (chatId) => {
+  const isSubscribed = userSettings[chatId]?.daily;
+  const buttons = [];
+
+  if (isSubscribed) {
+    buttons.push(["Отписаться 🔕"]);
+  } else {
+    buttons.push(["Подписаться 🔔"]);
+  }
+
+  buttons.push(["Прислать котика сейчас 🐾"]);
+
+  return Markup.keyboard(buttons).resize();
+};
+
+const removeMenu = Markup.removeKeyboard();
 
 const subscribeUser = (ctx) => {
+  const isGroup = ctx.chat.type === "group" || ctx.chat.type === "supergroup";
   userSettings[ctx.chat.id] = { daily: true };
-  ctx.reply("Вы подписались на ежедневных котов!", mainMenu);
+
+  if (isGroup) {
+    return ctx.reply(
+      "Вы подписались! (В группах клавиатура скрыта)",
+      removeMenu
+    );
+  }
+  ctx.reply("Вы подписались на ежедневных котов!", getKeyboard(ctx.chat.id));
 };
 
 const unsubscribeUser = (ctx) => {
+  const isGroup = ctx.chat.type === "group" || ctx.chat.type === "supergroup";
   if (userSettings[ctx.chat.id]) userSettings[ctx.chat.id].daily = false;
-  ctx.reply("Рассылка отключена.", mainMenu);
+
+  if (isGroup) {
+    return ctx.reply("Рассылка отключена.", removeMenu);
+  }
+  ctx.reply("Рассылка отключена.", getKeyboard(ctx.chat.id));
 };
 
-bot.start((ctx) => ctx.reply("Привет! Я кото-бот.", mainMenu));
+bot.start((ctx) => {
+  const isGroup = ctx.chat.type === "group" || ctx.chat.type === "supergroup";
+  if (isGroup) {
+    return ctx.reply(
+      "Привет! В группах я присылаю котов рандомно.",
+      removeMenu
+    );
+  }
+  ctx.reply("Привет! Я кото-бот.", getKeyboard(ctx.chat.id));
+});
+
 bot.command("subscribe", subscribeUser);
 bot.hears("Подписаться 🔔", subscribeUser);
 bot.command("unsubscribe", unsubscribeUser);
 bot.hears("Отписаться 🔕", unsubscribeUser);
 
+bot.hears("Прислать котика сейчас 🐾", (ctx) => {
+  return ctx.replyWithPhoto(getCatUrl());
+});
+
 bot.on("message", async (ctx) => {
-  const text = ctx.message.text;
-  const chatId = ctx.chat.id;
   const isGroup = ctx.chat.type === "group" || ctx.chat.type === "supergroup";
-
-  if (text === "Подписаться 🔔" || text === "Отписаться 🔕") return;
-
-  if (text === "Прислать котика сейчас 🐾") {
-    return ctx.replyWithPhoto(getCatUrl());
-  }
 
   if (isGroup) {
     const chance = Math.random();
-    if (chance > 0.1) {
-      console.log(`Рандом не сработал (${chance.toFixed(2)})`);
-      return;
+    if (chance < 0.1) {
+      try {
+        await ctx.replyWithPhoto(getCatUrl());
+      } catch (e) {
+        console.error(e);
+      }
     }
-  }
-
-  try {
-    await ctx.replyWithPhoto(getCatUrl());
-  } catch (error) {
-    console.error("Ошибка:", error);
   }
 });
 
@@ -65,18 +87,14 @@ cron.schedule(
   () => {
     for (const chatId in userSettings) {
       if (userSettings[chatId].daily) {
-        bot.telegram
-          .sendPhoto(chatId, getCatUrl())
-          .catch((err) => console.error(err));
+        bot.telegram.sendPhoto(chatId, getCatUrl()).catch(console.error);
       }
     }
   },
   { timezone: "Europe/Moscow" }
 );
 
-bot
-  .launch()
-  .then(() => console.log("Бот запущен с вероятностью 10% в группах"));
+bot.launch().then(() => console.log("Бот запущен с динамической клавиатурой"));
 
 process.once("SIGINT", () => bot.stop("SIGINT"));
 process.once("SIGTERM", () => bot.stop("SIGTERM"));
