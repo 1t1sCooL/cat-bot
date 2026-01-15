@@ -29,10 +29,7 @@ const subscribeUser = (ctx) => {
   userSettings[ctx.chat.id] = { daily: true };
 
   if (isGroup) {
-    return ctx.reply(
-      "Вы подписались! (В группах клавиатура скрыта)",
-      removeMenu
-    );
+    return ctx.reply("Вы подписались!", removeMenu);
   }
   ctx.reply("Вы подписались на ежедневных котов!", getKeyboard(ctx.chat.id));
 };
