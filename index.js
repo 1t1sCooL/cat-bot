@@ -60,8 +60,19 @@ bot.hears("Подписаться 🔔", subscribeUser);
 bot.command("unsubscribe", unsubscribeUser);
 bot.hears("Отписаться 🔕", unsubscribeUser);
 
+bot.command("cat", (ctx) => {
+  return ctx.replyWithPhoto(getCatUrl());
+});
 bot.hears("Прислать котика сейчас 🐾", (ctx) => {
   return ctx.replyWithPhoto(getCatUrl());
+});
+
+bot.command("help", (ctx) => {
+  ctx.reply(`Привет! Я кото-бот.
+  Мои команды:
+  /subscribe - подписаться на рассылку (каждый день в 15:30 по мск)
+  /unsubscribe - отписаться
+  /cat - присать кота`);
 });
 
 bot.on("message", async (ctx) => {
