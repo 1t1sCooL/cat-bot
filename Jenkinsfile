@@ -50,6 +50,7 @@ pipeline {
             steps {
                 sh """
                     echo "🚀 Deploying to Kubernetes..."
+                    kubectl apply -f kubernetes/pvc.yaml
                     kubectl apply -f kubernetes/deployment.yaml
                 """
             }

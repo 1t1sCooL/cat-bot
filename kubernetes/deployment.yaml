@@ -21,3 +21,12 @@ spec:
                 secretKeyRef:
                   name: tg-cat-bot-token
                   key: CAT_BOT_TOKEN
+            - name: CAT_BOT_SETTINGS_PATH
+              value: /data/userSettings.json
+          volumeMounts:
+            - name: cat-bot-data
+              mountPath: /data
+      volumes:
+        - name: cat-bot-data
+          persistentVolumeClaim:
+            claimName: cat-bot-data
